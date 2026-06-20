@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Llaves YM · MXCD05</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f7f7f5;--surface:#fff;--surface2:#f2f1ee;
+  --border:#e4e3de;--border2:#d0cfc9;
+  --text:#1a1a18;--text2:#5c5c58;--text3:#9c9a94;
+  --green:#2d7a3a;--green-bg:#eaf3dc;--green-border:#b5d98a;
+  --amber:#92600a;--amber-bg:#fdf3dc;--amber-border:#f5c842;
+  --red:#b03030;--red-bg:#fceaea;--red-border:#f5a0a0;
+  --blue:#1a5fa8;--blue-bg:#e8f0fb;
+  --radius:12px;--radius-sm:8px;
+}
+body{background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text);padding:0 28px 60px;min-height:100vh}
+
+/* HEADER */
+.header{display:flex;justify-content:space-between;align-items:center;padding:20px 0 16px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.header-left{display:flex;align-items:center;gap:14px}
+.logo{width:40px;height:40px;background:var(--text);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.header-title{font-size:18px;font-weight:600}
+.header-sub{font-size:12px;color:var(--text3);margin-top:2px;letter-spacing:.03em}
+.header-right{display:flex;align-items:center;gap:10px}
+.live-pill{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--green);background:var(--green-bg);border:0.5px solid var(--green-border);border-radius:20px;padding:5px 12px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.upd-time{font-size:12px;color:var(--text3)}
+.btn{font-size:12px;height:34px;padding:0 14px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:background .15s;white-space:nowrap}
+.btn:hover{background:var(--surface2)}
+.btn-primary{background:var(--text);color:#fff;border-color:var(--text)}
+.btn-primary:hover{opacity:.85}
+
+/* SETUP BANNER */
+.setup-banner{background:var(--amber-bg);border:0.5px solid var(--amber-border);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px}
+.setup-banner h3{font-size:15px;font-weight:600;color:var(--amber);margin-bottom:10px}
+.setup-banner p{font-size:13px;color:var(--text2);line-height:1.6;margin-bottom:10px}
+.setup-banner code{background:var(--surface);border:0.5px solid var(--border2);border-radius:4px;padding:2px 6px;font-family:monospace;font-size:12px}
+.setup-banner input{width:100%;font-size:13px;height:38px;padding:0 12px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--surface);color:var(--text);margin-top:4px;outline:none}
+.setup-banner input:focus{border-color:var(--text)}
+.btn-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.error-msg{background:var(--red-bg);border:0.5px solid var(--red-border);color:var(--red);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:16px;display:none}
+
+/* KPI ROW */
+.kpi-row{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:20px}
+@media(max-width:900px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:560px){.kpi-row{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px 18px}
+.kpi-label{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.kpi-value{font-size:34px;font-weight:600;line-height:1}
+.kpi-hint{font-size:11px;color:var(--text3);margin-top:5px}
+
+/* PROGRESS GLOBAL */
+.progress-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin-bottom:20px}
+.progress-header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.progress-title{font-size:13px;font-weight:600}
+.progress-pct{font-size:30px;font-weight:600}
+.progress-track{background:var(--border);border-radius:6px;height:10px;margin-bottom:10px;overflow:hidden}
+.progress-fill{height:10px;border-radius:6px;transition:width .8s ease}
+.progress-stats{display:flex;gap:24px;font-size:12px;color:var(--text2);flex-wrap:wrap}
+.progress-stats b{font-weight:600}
+
+/* CHIPS */
+.chips-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.chip-label{font-size:11px;color:var(--text3);margin-right:2px}
+.chip{font-size:12px;padding:5px 13px;border-radius:20px;border:0.5px solid var(--border2);cursor:pointer;background:var(--surface);color:var(--text2);transition:all .15s;white-space:nowrap;user-select:none}
+.chip:hover{background:var(--surface2)}
+.chip.active{background:var(--text);color:#fff;border-color:var(--text)}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.toolbar input{font-size:13px;height:34px;padding:0 10px;border-radius:var(--radius-sm);border:0.5px solid var(--border2);background:var(--surface);color:var(--text);width:220px;outline:none}
+.toolbar input:focus{border-color:var(--text)}
+.ml-auto{margin-left:auto}
+
+/* CPT SECTIONS */
+.cpt-block{margin-bottom:20px}
+.cpt-header{display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:10px;background:var(--surface2);border:0.5px solid var(--border);margin-bottom:10px}
+.cpt-name{font-size:13px;font-weight:600;min-width:95px}
+.cpt-bar-wrap{flex:1;background:var(--border);border-radius:4px;height:6px;overflow:hidden}
+.cpt-bar-fill{height:6px;border-radius:4px;transition:width .6s ease}
+.cpt-pct{font-size:13px;font-weight:600;min-width:40px;text-align:right}
+.cpt-count{font-size:11px;color:var(--text3);min-width:75px;text-align:right}
+
+/* CARDS GRID */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:8px}
+.dest-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:13px 15px;transition:border-color .15s}
+.dest-card:hover{border-color:var(--border2)}
+.dest-card.grupo{border-left:3px solid var(--amber)}
+.dest-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.dest-name{font-size:13px;font-weight:600;line-height:1.3}
+.dest-pct-val{font-size:12px;font-weight:600}
+.dest-bar-wrap{background:var(--border);border-radius:3px;height:4px;margin-bottom:7px;overflow:hidden}
+.dest-bar-fill{height:4px;border-radius:3px;transition:width .5s}
+.dest-bottom{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.dest-counts{font-size:10px;color:var(--text3)}
+
+/* BADGES */
+.badge{display:inline-block;font-size:10px;padding:2px 8px;border-radius:4px;font-weight:600;white-space:nowrap}
+.b-green{background:var(--green-bg);color:var(--green)}
+.b-amber{background:var(--amber-bg);color:var(--amber)}
+.b-red{background:var(--red-bg);color:var(--red)}
+.b-blue{background:var(--blue-bg);color:var(--blue)}
+.b-gray{background:var(--surface2);color:var(--text3)}
+
+/* CHART */
+.chart-card{background:var(--surface);border:0.5px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px}
+.chart-title{font-size:13px;font-weight:600;margin-bottom:14px}
+.chart-bars{display:flex;flex-direction:column;gap:8px}
+.chart-row{display:grid;grid-template-columns:90px 1fr 42px;gap:10px;align-items:center;font-size:12px}
+.chart-label{color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart-bar-wrap{background:var(--border);border-radius:4px;height:20px;overflow:hidden}
+.chart-bar-fill{height:20px;border-radius:4px;transition:width .8s ease;display:flex;align-items:center;padding-left:8px}
+.chart-bar-fill span{font-size:10px;font-weight:600;color:#fff;white-space:nowrap}
+.chart-pct{font-size:12px;font-weight:600;text-align:right}
+
+/* ENTREGAS */
+.entregas-section{margin-top:8px}
+.section-title{font-size:13px;font-weight:600;margin-bottom:10px}
+.entrega-row{display:grid;grid-template-columns:52px 130px 75px 1fr 70px;gap:8px;align-items:center;font-size:12px;padding:8px 12px;border-radius:8px;background:var(--surface);border:0.5px solid var(--border);margin-bottom:5px}
+.e-hora{color:var(--text3);font-weight:500}
+.e-ym{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.e-dest{color:var(--blue);font-weight:500}
+.e-unidad{color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.no-results{text-align:center;padding:40px;color:var(--text3);font-size:13px}
+.finde-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;background:var(--blue-bg);color:var(--blue);border-radius:6px;padding:3px 8px;margin-left:8px}
+
+/* SKELETON */
+.skeleton{background:var(--surface2);border-radius:6px;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%,100%{opacity:.6}50%{opacity:1}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">🔑</div>
+    <div>
+      <div class="header-title">Control de entrega de llaves</div>
+      <div class="header-sub" id="header-sub">YARD MARSHALL · MERCADOLIBRE MXCD05</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="upd-time" id="upd-time">—</span>
+    <button class="btn" id="btn-refresh" onclick="loadData()">↻ Actualizar</button>
+    <div class="live-pill"><div class="live-dot"></div>LIVE</div>
+  </div>
+</div>
+
+<div class="setup-banner" id="setup-banner">
+  <h3>⚙️ Configuración del dashboard</h3>
+  <p>Pega la <strong>URL de tu Apps Script</strong> para conectar en tiempo real.<br>
+  La obtienes en Apps Script → Implementar → Nueva implementación → Aplicación web → Copiar URL.</p>
+  <input type="text" id="script-url-input" placeholder="https://script.google.com/macros/s/AKfy.../exec" autocomplete="off">
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="saveScriptUrl()">Conectar y cargar datos</button>
+    <button class="btn" onclick="useDemoData()">Ver demo con datos de muestra</button>
+  </div>
+</div>
+
+<div class="error-msg" id="error-msg"></div>
+
+<div id="main" style="display:none">
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Total llaves</div>
+      <div class="kpi-value" id="k-total">—</div>
+      <div class="kpi-hint">requeridas hoy</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Entregadas</div>
+      <div class="kpi-value" id="k-ent" style="color:var(--green)">—</div>
+      <div class="kpi-hint">confirmadas con foto</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Faltantes</div>
+      <div class="kpi-value" id="k-falt" style="color:var(--red)">—</div>
+      <div class="kpi-hint">por gestionar</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">% avance global</div>
+      <div class="kpi-value" id="k-pct" style="color:var(--amber)">—</div>
+      <div class="kpi-hint">del turno completo</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">CPTs completos</div>
+      <div class="kpi-value" id="k-cpts">—</div>
+      <div class="kpi-hint" id="k-cpts-hint">—</div>
+    </div>
+  </div>
+
+  <div class="progress-card">
+    <div class="progress-header">
+      <div class="progress-title">Avance total del turno <span id="finde-badge"></span></div>
+      <div class="progress-pct" id="prog-pct">—</div>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="prog-bar" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <span>Entregadas: <b id="ps-ent" style="color:var(--green)">—</b></span>
+      <span>Pendientes: <b id="ps-falt" style="color:var(--red)">—</b></span>
+      <span>Total requeridas: <b id="ps-total">—</b></span>
+    </div>
+  </div>
+
+  <div class="chips-wrap">
+    <span class="chip-label">Filtrar:</span>
+    <span class="chip active" data-cpt="TODOS" onclick="setCPT('TODOS',this)">Todos</span>
+    <span class="chip" data-cpt="CPT-0000"  onclick="setCPT('CPT-0000',this)">CPT 0:00</span>
+    <span class="chip" data-cpt="CPT-5:00"  onclick="setCPT('CPT-5:00',this)">CPT 5:00</span>
+    <span class="chip" data-cpt="CPT-11:00" onclick="setCPT('CPT-11:00',this)">CPT 11:00</span>
+    <span class="chip" data-cpt="CPT-13:30" onclick="setCPT('CPT-13:30',this)">CPT 13:30</span>
+    <span class="chip" data-cpt="CPT-14:00" onclick="setCPT('CPT-14:00',this)">CPT 14:00</span>
+    <span class="chip" data-cpt="CPT-15:00" onclick="setCPT('CPT-15:00',this)">CPT 15:00</span>
+    <span class="chip" data-cpt="CPT-16:00" onclick="setCPT('CPT-16:00',this)">CPT 16:00</span>
+    <span class="chip" data-cpt="CPT-23:00" onclick="setCPT('CPT-23:00',this)">CPT 23:00</span>
+    <span class="chip" data-cpt="FALTANTES" onclick="setCPT('FALTANTES',this)">⚠ Solo faltantes</span>
+  </div>
+
+  <div class="toolbar">
+    <input id="f-search" placeholder="Buscar destino…" oninput="render()">
+    <button class="btn" onclick="clearFilters()">Limpiar</button>
+    <button class="btn ml-auto" onclick="exportCSV()">⬇ Exportar CSV</button>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Avance por CPT</div>
+    <div class="chart-bars" id="chart-bars"></div>
+  </div>
+
+  <div id="cpt-sections"></div>
+
+  <div class="entregas-section">
+    <div class="section-title">Últimas entregas del día</div>
+    <div id="entregas-list"></div>
+  </div>
+</div>
+
+<script>
+const CPT_LABELS = {
+  'CPT-0000':'CPT 0:00','CPT-5:00':'CPT 5:00','CPT-11:00':'CPT 11:00',
+  'CPT-13:30':'CPT 13:30','CPT-14:00':'CPT 14:00','CPT-15:00':'CPT 15:00',
+  'CPT-16:00':'CPT 16:00','CPT-23:00':'CPT 23:00'
+};
+
+let STATE = null;
+let activeCPT = 'TODOS';
+let scriptUrl = localStorage.getItem('ym_script_url') || '';
+let refreshTimer = null;
+
+function semColor(pct){
+  if(pct >= 85) return 'var(--green)';
+  if(pct >= 60) return 'var(--amber)';
+  return 'var(--red)';
+}
+function semBadge(pct){
+  if(pct >= 85) return '<span class="badge b-green">Completo</span>';
+  if(pct >= 60) return '<span class="badge b-amber">En progreso</span>';
+  if(pct >  0)  return '<span class="badge b-red">Iniciado</span>';
+  return '<span class="badge b-gray">Pendiente</span>';
+}
+
+function saveScriptUrl(){
+  const v = document.getElementById('script-url-input').value.trim();
+  if(!v){ showError('Pega la URL de tu Apps Script'); return; }
+  scriptUrl = v;
+  localStorage.setItem('ym_script_url', v);
+  document.getElementById('setup-banner').style.display = 'none';
+  loadData();
+}
+
+async function loadData(){
+  if(!scriptUrl){ return; }
+  const btn = document.getElementById('btn-refresh');
+  btn.textContent = '↻ Cargando…';
+  showError('');
+  try {
+    const res  = await fetch(scriptUrl);
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    STATE = data;
+    document.getElementById('setup-banner').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+    document.getElementById('upd-time').textContent = 'Act. ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+    render();
+    clearInterval(refreshTimer);
+    refreshTimer = setInterval(loadData, 60000);
+  } catch(e){
+    showError('Error al cargar datos: ' + e.message);
+    if(!STATE) useDemoData();
+  } finally {
+    btn.textContent = '↻ Actualizar';
+  }
+}
+
+function showError(msg){
+  const el = document.getElementById('error-msg');
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none';
+}
+
+function setCPT(cpt, el){
+  activeCPT = cpt;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+function clearFilters(){
+  document.getElementById('f-search').value = '';
+  activeCPT = 'TODOS';
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  document.querySelector('[data-cpt="TODOS"]').classList.add('active');
+  render();
+}
+
+function render(){
+  if(!STATE) return;
+  const search = document.getElementById('f-search').value.toLowerCase();
+
+  let cptsToShow = STATE.resumenCPT.filter(c => {
+    if(activeCPT === 'FALTANTES') return c.totalFalt > 0;
+    if(activeCPT !== 'TODOS') return c.cpt === activeCPT;
+    return true;
+  });
+
+  if(search){
+    cptsToShow = cptsToShow.map(c => ({
+      ...c,
+      detalles: c.detalles.filter(d => d.destino.toLowerCase().includes(search))
+    })).filter(c => c.detalles.length > 0);
+  }
+
+  const totalReq  = cptsToShow.reduce((a,c)=>a+c.totalReq,0);
+  const totalEnt  = cptsToShow.reduce((a,c)=>a+c.totalEnt,0);
+  const totalFalt = cptsToShow.reduce((a,c)=>a+c.totalFalt,0);
+  const pct = totalReq > 0 ? Math.round(totalEnt/totalReq*100) : 0;
+
+  const completados = STATE.resumenCPT.filter(c=>c.pct>=85).length;
+  const totalCPTs   = STATE.resumenCPT.length;
+
+  document.getElementById('k-total').textContent = totalReq;
+  document.getElementById('k-ent').textContent   = totalEnt;
+  document.getElementById('k-falt').textContent  = totalFalt;
+  document.getElementById('k-pct').textContent   = pct + '%';
+  document.getElementById('k-pct').style.color   = semColor(pct);
+  document.getElementById('k-cpts').textContent  = completados + ' / ' + totalCPTs;
+  document.getElementById('k-cpts-hint').textContent = completados > 0
+    ? STATE.resumenCPT.filter(c=>c.pct>=85).map(c=>CPT_LABELS[c.cpt]||c.cpt).join(', ')
+    : 'ninguno completo aún';
+  document.getElementById('prog-pct').textContent   = pct + '%';
+  document.getElementById('prog-pct').style.color   = semColor(pct);
+  document.getElementById('prog-bar').style.width    = pct + '%';
+  document.getElementById('prog-bar').style.background = semColor(pct);
+  document.getElementById('ps-ent').textContent   = totalEnt;
+  document.getElementById('ps-falt').textContent  = totalFalt;
+  document.getElementById('ps-total').textContent = totalReq;
+
+  if(STATE.esFinde){
+    document.getElementById('finde-badge').innerHTML = '<span class="finde-badge">📅 Fin de semana — CPT 16:00 reducido</span>';
+  }
+
+  // Gráfica
+  document.getElementById('chart-bars').innerHTML = STATE.resumenCPT.map(c => {
+    const color = semColor(c.pct);
+    return `<div class="chart-row">
+      <div class="chart-label">${CPT_LABELS[c.cpt]||c.cpt}</div>
+      <div class="chart-bar-wrap">
+        <div class="chart-bar-fill" style="width:${c.pct}%;background:${color}">
+          ${c.pct>8?`<span>${c.pct}%</span>`:''}
+        </div>
+      </div>
+      <div class="chart-pct" style="color:${color}">${c.pct}%</div>
+    </div>`;
+  }).join('');
+
+  // Secciones CPT
+  if(cptsToShow.length === 0){
+    document.getElementById('cpt-sections').innerHTML = '<div class="no-results">Sin resultados para este filtro</div>';
+    return;
+  }
+
+  document.getElementById('cpt-sections').innerHTML = cptsToShow.map(c => {
+    const cards = c.detalles.map(d => {
+      const rPct = d.req > 0 ? Math.round(Math.max(0,d.ent)/d.req*100) : 0;
+      return `<div class="dest-card${d.esGrupo?' grupo':''}">
+        <div class="dest-top">
+          <div class="dest-name">${d.destino}</div>
+          <div class="dest-pct-val" style="color:${semColor(rPct)}">${rPct}%</div>
+        </div>
+        <div class="dest-bar-wrap"><div class="dest-bar-fill" style="width:${rPct}%;background:${semColor(rPct)}"></div></div>
+        <div class="dest-bottom">
+          <div class="dest-counts">${d.ent} de ${d.req} llave${d.req>1?'s':''}</div>
+          ${semBadge(rPct)}
+        </div>
+      </div>`;
+    }).join('');
+
+    return `<div class="cpt-block">
+      <div class="cpt-header">
+        <div class="cpt-name">${CPT_LABELS[c.cpt]||c.cpt}</div>
+        ${semBadge(c.pct)}
+        <div class="cpt-bar-wrap"><div class="cpt-bar-fill" style="width:${c.pct}%;background:${semColor(c.pct)}"></div></div>
+        <div class="cpt-pct" style="color:${semColor(c.pct)}">${c.pct}%</div>
+        <div class="cpt-count">${c.totalEnt}/${c.totalReq} llaves</div>
+      </div>
+      <div class="cards-grid">${cards}</div>
+    </div>`;
+  }).join('');
+
+  // Entregas
+  const list = document.getElementById('entregas-list');
+  if(!STATE.entregasHoy || !STATE.entregasHoy.length){
+    list.innerHTML = '<div class="no-results">Sin entregas registradas hoy</div>';
+    return;
+  }
+  list.innerHTML = STATE.entregasHoy.map(e => {
+    const hora = e.timestamp ? new Date(e.timestamp).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}) : e.hora||'—';
+    return `<div class="entrega-row">
+      <span class="e-hora">${hora}</span>
+      <span class="e-ym">${e.ym||'—'}</span>
+      <span class="e-dest">${e.destino||'—'}</span>
+      <span class="e-unidad">${e.economico||e.linea||'—'}</span>
+      <span class="badge b-blue">${(e.cpt||'').replace('CPT-','')}</span>
+    </div>`;
+  }).join('');
+}
+
+function exportCSV(){
+  if(!STATE) return;
+  let rows = 'CPT,Destino,Requeridas,Entregadas,Faltantes,Estado\n';
+  STATE.resumenCPT.forEach(c => {
+    c.detalles.forEach(d => {
+      const est = d.ent>=d.req?'ENTREGADA':d.ent>0?'PARCIAL':'FALTANTE';
+      rows += [c.cpt,d.destino,d.req,d.ent,d.falt,est].join(',') + '\n';
+    });
+  });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([rows],{type:'text/csv'}));
+  a.download = 'llaves_' + (STATE.fecha||new Date().toISOString().slice(0,10)) + '.csv';
+  a.click();
+}
+
+// DEMO DATA
+function useDemoData(){
+  const esFinde = [0,6].includes(new Date().getDay());
+  STATE = {
+    ok: true,
+    fecha: new Date().toISOString().slice(0,10),
+    esFinde,
+    totalReq: 82, totalEnt: 15, totalFalt: 67, pctGlobal: 18,
+    resumenCPT: [
+      {cpt:'CPT-0000', totalReq:14,totalEnt:0, totalFalt:14,pct:0,  detalles:[
+        {destino:'SMX2',req:1,ent:0,falt:1},{destino:'SMX3',req:1,ent:0,falt:1},
+        {destino:'SMX4',req:1,ent:0,falt:1},{destino:'SMX5',req:1,ent:0,falt:1},
+        {destino:'SMX7',req:1,ent:0,falt:1},{destino:'SMX8',req:1,ent:0,falt:1},
+        {destino:'SMX9',req:1,ent:0,falt:1},{destino:'SMX10',req:1,ent:0,falt:1},
+        {destino:'SMX11',req:2,ent:0,falt:2},{destino:'XEM2_2',req:1,ent:0,falt:1},
+        {destino:'XEM2_3',req:1,ent:0,falt:1},{destino:'XEM2_7',req:1,ent:0,falt:1},{destino:'MXXEM2',req:1,ent:0,falt:1}
+      ]},
+      {cpt:'CPT-5:00', totalReq:18,totalEnt:0, totalFalt:18,pct:0,  detalles:[
+        {destino:'SVH1',req:1,ent:0,falt:1},{destino:'SLE1',req:1,ent:0,falt:1},
+        {destino:'SDC1',req:1,ent:0,falt:1},{destino:'SPZ1',req:1,ent:0,falt:1},
+        {destino:'XEM2_6',req:2,ent:0,falt:2},{destino:'SRX1',req:1,ent:0,falt:1},
+        {destino:'SGD3',req:1,ent:0,falt:1},{destino:'SMX2',req:1,ent:0,falt:1},
+        {destino:'SMX3',req:1,ent:0,falt:1},{destino:'SMX4',req:1,ent:0,falt:1},
+        {destino:'SMX5',req:1,ent:0,falt:1},{destino:'SMX6',req:1,ent:0,falt:1},
+        {destino:'SMX7',req:1,ent:0,falt:1},{destino:'SMX8',req:1,ent:0,falt:1},
+        {destino:'SMX9',req:1,ent:0,falt:1},{destino:'SMX10',req:1,ent:0,falt:1},{destino:'SMX11',req:1,ent:0,falt:1}
+      ]},
+      {cpt:'CPT-11:00',totalReq:1, totalEnt:1, totalFalt:0, pct:100,detalles:[{destino:'SMX1',req:1,ent:1,falt:0}]},
+      {cpt:'CPT-13:30',totalReq:12,totalEnt:0, totalFalt:12,pct:0,  detalles:[
+        {destino:'SMX2',req:1,ent:0,falt:1},{destino:'SMX3',req:1,ent:0,falt:1},
+        {destino:'SMX4',req:1,ent:0,falt:1},{destino:'SMX5',req:1,ent:0,falt:1},
+        {destino:'SMX7',req:1,ent:0,falt:1},{destino:'SMX8',req:1,ent:0,falt:1},
+        {destino:'SMX9',req:2,ent:0,falt:2},{destino:'SMX10',req:1,ent:0,falt:1},
+        {destino:'SMX11',req:1,ent:0,falt:1},{destino:'XEM2_2',req:1,ent:0,falt:1},
+        {destino:'Grupo Sur (SRX1+SMA1+SGD3+SCX1+EVH1)',req:1,ent:0,falt:1,esGrupo:true}
+      ]},
+      {cpt:'CPT-14:00',totalReq:8, totalEnt:1, totalFalt:7, pct:13, detalles:[
+        {destino:'SPB1',req:1,ent:0,falt:1},{destino:'SPB3',req:1,ent:0,falt:1},
+        {destino:'MXXMT1',req:1,ent:0,falt:1},{destino:'SMT1',req:1,ent:0,falt:1},
+        {destino:'STA1',req:1,ent:0,falt:1},{destino:'MXXHM1',req:1,ent:1,falt:0},
+        {destino:'STJ1',req:1,ent:0,falt:1},{destino:'STX1',req:1,ent:0,falt:1}
+      ]},
+      {cpt:'CPT-15:00',totalReq:14,totalEnt:0, totalFalt:14,pct:0,  detalles:[
+        {destino:'SQR1',req:1,ent:0,falt:1},{destino:'SOX1',req:1,ent:0,falt:1},
+        {destino:'STG1',req:1,ent:0,falt:1},{destino:'STG2',req:1,ent:0,falt:1},
+        {destino:'SJA1',req:2,ent:0,falt:2},{destino:'XEM2_2',req:1,ent:0,falt:1},
+        {destino:'XEM2_3',req:1,ent:0,falt:1},{destino:'XEM2_6',req:1,ent:0,falt:1},
+        {destino:'SRX1',req:1,ent:0,falt:1},{destino:'SMA1',req:1,ent:0,falt:1},
+        {destino:'SGD3',req:1,ent:0,falt:1},{destino:'SCX1',req:1,ent:0,falt:1},{destino:'EVH1',req:1,ent:0,falt:1}
+      ]},
+      {cpt:'CPT-16:00',totalReq:esFinde?12:14,totalEnt:13,totalFalt:esFinde?-1:1,pct:esFinde?100:87,detalles:[
+        {destino:'MXAQR1',req:1,ent:1,falt:0},{destino:'SDC1',req:1,ent:1,falt:0},
+        {destino:'SML1',req:1,ent:1,falt:0},{destino:'SML2',req:1,ent:0,falt:1},
+        {destino:'SCT1',req:1,ent:1,falt:0},{destino:'SLE1',req:1,ent:1,falt:0},
+        {destino:'SVH1',req:1,ent:1,falt:0},{destino:'SPZ1',req:1,ent:1,falt:0},
+        {destino:'SGD1',req:1,ent:1,falt:0},{destino:'SVR1',req:1,ent:1,falt:0},
+        {destino:'SGD2',req:1,ent:1,falt:0},{destino:'STN1',req:1,ent:1,falt:0},
+        ...(!esFinde?[{destino:'FDXXS2',req:2,ent:1,falt:1}]:[])
+      ]},
+      {cpt:'CPT-23:00',totalReq:13,totalEnt:0, totalFalt:13,pct:0,  detalles:[
+        {destino:'SCH1',req:1,ent:0,falt:1},{destino:'SCJ1',req:1,ent:0,falt:1},
+        {destino:'SBJ1',req:1,ent:0,falt:1},{destino:'SCG1',req:1,ent:0,falt:1},{destino:'SGR1',req:1,ent:0,falt:1},
+        {destino:'STL1+STL2',req:1,ent:0,falt:1,esGrupo:true},{destino:'SCV1+SCV2',req:1,ent:0,falt:1,esGrupo:true},
+        {destino:'SHP1+SHP2',req:1,ent:0,falt:1,esGrupo:true},{destino:'SQR1+SQR2',req:1,ent:0,falt:1,esGrupo:true}
+      ]}
+    ],
+    entregasHoy:[
+      {hora:'6:58', ym:'Cesar Sgo.',  cpt:'CPT-11:00',destino:'SMX1',   economico:'TUMSA 349'},
+      {hora:'14:04',ym:'Cesar Sgo.',  cpt:'CPT-16:00',destino:'SCT1',   economico:'TRACUSA 1225'},
+      {hora:'14:12',ym:'Cesar Sgo.',  cpt:'CPT-16:00',destino:'SVR1',   economico:'TUMSA 815'},
+      {hora:'14:14',ym:'Cesar Sgo.',  cpt:'CPT-16:00',destino:'SDC1',   economico:'TRACASA'},
+      {hora:'14:17',ym:'Garibaldo',   cpt:'CPT-16:00',destino:'FDXXS2', economico:'07'},
+      {hora:'14:55',ym:'Cesar Sgo.',  cpt:'CPT-16:00',destino:'SVH1',   economico:'Nuevo Méx'},
+    ]
+  };
+  document.getElementById('setup-banner').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('upd-time').textContent = 'Datos de muestra · ' + new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+  render();
+}
+
+// Init
+if(scriptUrl){
+  document.getElementById('setup-banner').style.display = 'none';
+  loadData();
+}
+</script>
+</body>
+</html>
